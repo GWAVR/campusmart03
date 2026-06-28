@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Rules for CampusMart collections
+    
+    // Products can be read by anyone and written by any client
+    match /products/{productId} {
+      allow read, write: if true;
+    }
+    
+    // Users saved IDs can be read and written by anyone
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+    
+    // Purchases can be read and written by anyone
+    match /purchases/{purchaseId} {
+      allow read, write: if true;
+    }
+    
+    // Product reports can be read and written by anyone (moderators keep it clean)
+    match /product_reports/{reportId} {
+      allow read, write: if true;
+    }
+    
+    // Chats can be read and written by anyone
+    match /chats/{chatId} {
+      allow read, write: if true;
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "campusmart",
+  "private": true,
+  "version": "1.0.0",
+  "description": "CampusMart - Campus Marketplace Application",
+  "scripts": {
+    "install:all": "cd frontend && npm install && cd ../backend && npm install",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build": "cd frontend && npm run build",
+    "seed": "cd backend && npm run seed"
+  },
+  "dependencies": {
+    "concurrently": "^10.0.3"
+  }
+}

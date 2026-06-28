@@ -1,0 +1,172 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product Listing",
+      "description": "A single item listed for sale on CampusMart",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the product listing"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title/name of the product"
+        },
+        "price": {
+          "type": "number",
+          "description": "Selling price of the product"
+        },
+        "originalPrice": {
+          "type": "number",
+          "description": "Original store price of the product"
+        },
+        "condition": {
+          "type": "string",
+          "description": "Product condition rating (e.g. Good, Like New)"
+        },
+        "category": {
+          "type": "string",
+          "description": "Product category (e.g. Electronics, Books)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the product"
+        },
+        "image": {
+          "type": "string",
+          "description": "Image URL or illustration type"
+        },
+        "seller": {
+          "type": "object",
+          "description": "Information about the seller"
+        },
+        "isVerifiedStudent": {
+          "type": "boolean",
+          "description": "Whether the listing is verified by a student"
+        },
+        "viewsCount": {
+          "type": "number",
+          "description": "Number of views"
+        },
+        "campus": {
+          "type": "string",
+          "description": "The campus the product is located on"
+        }
+      },
+      "required": ["id", "title", "price", "category", "seller"]
+    },
+    "User": {
+      "title": "User saved list",
+      "description": "User saved items",
+      "type": "object",
+      "properties": {
+        "savedProductIds": {
+          "type": "array",
+          "description": "List of saved product listing IDs"
+        }
+      }
+    },
+    "PurchaseRecord": {
+      "title": "Purchase Record",
+      "description": "A record of a buy now checkout",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Transaction identifier"
+        },
+        "productId": {
+          "type": "string",
+          "description": "ID of the purchased product"
+        },
+        "productTitle": {
+          "type": "string",
+          "description": "Title of the product"
+        },
+        "price": {
+          "type": "number",
+          "description": "Price paid"
+        },
+        "buyerEmail": {
+          "type": "string",
+          "description": "Email of the buyer"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Date and time of purchase"
+        }
+      },
+      "required": ["id", "productId", "buyerEmail", "timestamp"]
+    },
+    "ProductReport": {
+      "title": "Product Report",
+      "description": "A safety or incorrect price flag raised by a user",
+      "type": "object",
+      "properties": {
+        "productId": {
+          "type": "string",
+          "description": "ID of the reported product"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason for reporting (e.g., Incorrect Price)"
+        },
+        "details": {
+          "type": "string",
+          "description": "Detailed elaboration"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Date of the report"
+        }
+      },
+      "required": ["productId", "reason", "details", "timestamp"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A chat dialogue element",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Message identity"
+        },
+        "sender": {
+          "type": "string",
+          "description": "Who sent it"
+        },
+        "text": {
+          "type": "string",
+          "description": "Message content"
+        },
+        "time": {
+          "type": "string",
+          "description": "Time string"
+        }
+      }
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of all listed student products"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of user preferences and bookmarks"
+    },
+    "/purchases/{purchaseId}": {
+      "schema": "PurchaseRecord",
+      "description": "Logs of transactions completed inside the application"
+    },
+    "/product_reports/{reportId}": {
+      "schema": "ProductReport",
+      "description": "Safety report cases"
+    },
+    "/chats/{chatId}": {
+      "schema": "ChatMessage",
+      "description": "Synchronized conversation logs between buyers and sellers"
+    }
+  }
+}

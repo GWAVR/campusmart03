@@ -1,0 +1,6 @@
+{
+  "name": "CampusMart",
+  "description": "The safest university-verified marketplace for students to buy and sell textbooks, electronics, dorm gear, and more.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
