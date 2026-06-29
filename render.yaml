@@ -1,0 +1,19 @@
+# render.yaml — Render Blueprint for CampusMart Backend
+# Deploy via: Render Dashboard → New → Blueprint → connect this repo
+
+services:
+  - type: web
+    name: campusmart-api
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false   # Set manually in Render dashboard (secret)
+      - key: FRONTEND_URL
+        sync: false   # Set manually in Render dashboard

@@ -5,13 +5,10 @@
  * Mounts all route modules and starts listening on the configured port.
  */
 
-// Load .env file for local development (Render sets env vars natively)
-try {
-  const dotenv = await import('dotenv');
-  dotenv.config();
-} catch {
-  // dotenv not installed — that's fine in production
-}
+// Load .env file FIRST so all subsequent imports can read process.env
+// In production (Render), env vars are set natively — dotenv just no-ops on missing .env
+import dotenv from 'dotenv';
+dotenv.config();
 
 import express from 'express';
 import cors from 'cors';

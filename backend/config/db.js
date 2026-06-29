@@ -7,18 +7,19 @@
 
 import { MongoClient } from 'mongodb';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/campusmart';
-const DB_NAME = process.env.MONGODB_DB_NAME || 'campusmart';
-
 let client;
 let db;
 
 /**
  * Connect to MongoDB and return the database instance.
  * Reuses the existing connection if already connected.
+ * Reads env vars at call time (not import time) so dotenv/Render vars are available.
  */
 export async function connectDB() {
   if (db) return db;
+
+  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/campusmart';
+  const DB_NAME = process.env.MONGODB_DB_NAME || 'campusmart';
 
   try {
     client = new MongoClient(MONGODB_URI);
