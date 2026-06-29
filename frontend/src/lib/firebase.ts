@@ -14,7 +14,9 @@
 import { Product, PurchaseRecord, ChatMessage } from '../types';
 import { ProductReport } from '../components/ProfileScreen';
 
-const API_BASE = '/api';
+// In production, set VITE_API_URL to your Render backend URL (e.g. https://campusmart-api.onrender.com/api)
+// In development, defaults to '/api' which is proxied by Vite to localhost:5000
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 /**
  * Generic fetch wrapper with error handling.
