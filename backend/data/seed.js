@@ -1,20 +1,17 @@
 /**
- * Firestore Seed Script
+ * MongoDB Seed Script
  * 
- * Seeds the Firestore database with initial CampusMart product data.
+ * Seeds the MongoDB database with initial CampusMart product data.
  * Run with: cd backend && node data/seed.js
- * 
- * This script reads from the frontend data source and writes
- * all seed records into the appropriate Firestore collections.
  */
 
-import { db, collection, doc, setDoc, getDocs } from '../config/firebase.js';
+import { connectDB, closeDB } from '../config/db.js';
 
 // ─── Seed Data ───────────────────────────────────────────────────────
-// Inline seed data (mirrored from src/data.ts) to avoid TypeScript import issues.
 
 const SEED_PRODUCTS = [
   {
+    _id: 'prod-eng-math',
     id: 'prod-eng-math',
     title: 'Engineering Mathematics',
     price: 45.00,
@@ -30,6 +27,7 @@ const SEED_PRODUCTS = [
     postedTime: '2 mins ago'
   },
   {
+    _id: 'prod-ti84',
     id: 'prod-ti84',
     title: 'TI-84 Plus CE Graphing Calculator',
     price: 95.00,
@@ -45,6 +43,7 @@ const SEED_PRODUCTS = [
     postedTime: '2 days ago'
   },
   {
+    _id: 'prod-org-chem',
     id: 'prod-org-chem',
     title: 'Organic Chemistry: Structure and Function (8th Ed)',
     price: 120.00,
@@ -60,6 +59,7 @@ const SEED_PRODUCTS = [
     postedTime: '5 hours ago'
   },
   {
+    _id: 'prod-lamp',
     id: 'prod-lamp',
     title: 'Adjustable LED Desk Lamp with USB Charging',
     price: 25.00,
@@ -74,6 +74,7 @@ const SEED_PRODUCTS = [
     postedTime: '1 day ago'
   },
   {
+    _id: 'prod-macbook',
     id: 'prod-macbook',
     title: 'MacBook Air M1 2020',
     price: 450.00,
@@ -91,6 +92,7 @@ const SEED_PRODUCTS = [
 
 const SEED_PURCHASES = [
   {
+    _id: 'pur-1',
     id: 'pur-1',
     productId: 'prod-org-chem-essentials',
     title: 'Organic Chemistry Essentials',
@@ -100,6 +102,7 @@ const SEED_PURCHASES = [
     status: 'Completed'
   },
   {
+    _id: 'pur-2',
     id: 'pur-2',
     productId: 'prod-mesh-chair',
     title: 'Ergonomic Mesh Desk Chair',
@@ -112,6 +115,7 @@ const SEED_PURCHASES = [
 
 const SEED_REPORTS = [
   {
+    _id: 'prod-ti84',
     productId: 'prod-ti84',
     reason: 'Incorrect Price',
     details: 'The listing states original price is Rs. 149 and selling price is Rs. 95, but the market value is much lower.',
@@ -121,32 +125,33 @@ const SEED_REPORTS = [
 
 // ─── Seed Functions ──────────────────────────────────────────────────
 
-async function seedCollection(collectionName, data, idField = 'id') {
-  const existing = await getDocs(collection(db, collectionName));
-  if (!existing.empty) {
-    console.log(`  ⚠  Collection "${collectionName}" already has ${existing.size} docs — skipping.`);
+async function seedCollection(db, collectionName, data) {
+  const existing = await db.collection(collectionName).countDocuments();
+  if (existing > 0) {
+    console.log(`  ⚠  Collection "${collectionName}" already has ${existing} docs — skipping.`);
     return;
   }
 
-  for (const item of data) {
-    const docId = item[idField] || item.productId || `auto-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    await setDoc(doc(db, collectionName, docId), item);
-  }
+  await db.collection(collectionName).insertMany(data);
   console.log(`  ✅ Seeded "${collectionName}" with ${data.length} records.`);
 }
 
 async function main() {
-  console.log('\n🌱 CampusMart — Seeding Firestore Database\n');
+  console.log('\n🌱 CampusMart — Seeding MongoDB Database\n');
 
   try {
-    await seedCollection('products', SEED_PRODUCTS, 'id');
-    await seedCollection('purchases', SEED_PURCHASES, 'id');
-    await seedCollection('product_reports', SEED_REPORTS, 'productId');
+    const db = await connectDB();
+
+    await seedCollection(db, 'products', SEED_PRODUCTS);
+    await seedCollection(db, 'purchases', SEED_PURCHASES);
+    await seedCollection(db, 'product_reports', SEED_REPORTS);
 
     console.log('\n✨ Seed complete!\n');
   } catch (error) {
     console.error('\n❌ Seed failed:', error.message);
-    process.exit(1);
+  } finally {
+    await closeDB();
+    process.exit(0);
   }
 }
 

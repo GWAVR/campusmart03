@@ -9,7 +9,7 @@
  */
 
 import { Router } from 'express';
-import { db, collection, doc, getDocs, setDoc, deleteDoc } from '../config/firebase.js';
+import { getDB } from '../config/db.js';
 import { ApiError } from '../middleware/errorHandler.js';
 
 const router = Router();
@@ -20,11 +20,11 @@ const router = Router();
  */
 router.get('/', async (req, res, next) => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'product_reports'));
-    const reports = [];
-    querySnapshot.forEach((docSnapshot) => {
-      reports.push({ id: docSnapshot.id, ...docSnapshot.data() });
-    });
+    const db = getDB();
+    let reports = await db.collection('product_reports').find().toArray();
+
+    // Map _id to id for frontend compatibility
+    reports = reports.map(({ _id, ...rest }) => ({ id: _id, ...rest }));
 
     res.json({ success: true, data: reports, count: reports.length });
   } catch (error) {
@@ -40,6 +40,7 @@ router.get('/', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const report = req.body;
+    const db = getDB();
 
     if (!report.productId || !report.reason || !report.details) {
       throw new ApiError(400, 'Missing required fields: productId, reason, details');
@@ -49,7 +50,11 @@ router.post('/', async (req, res, next) => {
     report.timestamp = report.timestamp || new Date().toLocaleDateString();
 
     // Use productId as the document ID (one report per product)
-    await setDoc(doc(db, 'product_reports', report.productId), report);
+    await db.collection('product_reports').updateOne(
+      { _id: report.productId },
+      { $set: { ...report, _id: report.productId } },
+      { upsert: true }
+    );
 
     res.status(201).json({
       success: true,
@@ -68,8 +73,9 @@ router.post('/', async (req, res, next) => {
 router.delete('/:productId', async (req, res, next) => {
   try {
     const { productId } = req.params;
+    const db = getDB();
 
-    await deleteDoc(doc(db, 'product_reports', productId));
+    await db.collection('product_reports').deleteOne({ _id: productId });
 
     res.json({ success: true, message: `Report for product ${productId} dismissed` });
   } catch (error) {

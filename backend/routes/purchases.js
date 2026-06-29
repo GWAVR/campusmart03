@@ -8,7 +8,7 @@
  */
 
 import { Router } from 'express';
-import { db, collection, doc, getDocs, setDoc } from '../config/firebase.js';
+import { getDB } from '../config/db.js';
 import { ApiError } from '../middleware/errorHandler.js';
 
 const router = Router();
@@ -19,11 +19,11 @@ const router = Router();
  */
 router.get('/', async (req, res, next) => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'purchases'));
-    const purchases = [];
-    querySnapshot.forEach((docSnapshot) => {
-      purchases.push({ id: docSnapshot.id, ...docSnapshot.data() });
-    });
+    const db = getDB();
+    let purchases = await db.collection('purchases').find().toArray();
+
+    // Map _id to id for frontend compatibility
+    purchases = purchases.map(({ _id, ...rest }) => ({ id: _id, ...rest }));
 
     res.json({ success: true, data: purchases, count: purchases.length });
   } catch (error) {
@@ -39,6 +39,7 @@ router.get('/', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const record = req.body;
+    const db = getDB();
 
     if (!record.id || !record.productId) {
       throw new ApiError(400, 'Missing required fields: id, productId');
@@ -50,7 +51,15 @@ router.post('/', async (req, res, next) => {
       month: 'short', day: 'numeric', year: 'numeric'
     });
 
-    await setDoc(doc(db, 'purchases', record.id), record);
+    // Use record.id as _id
+    const doc = { _id: record.id, ...record };
+    delete doc.id;
+
+    await db.collection('purchases').updateOne(
+      { _id: doc._id },
+      { $set: doc },
+      { upsert: true }
+    );
 
     res.status(201).json({
       success: true,

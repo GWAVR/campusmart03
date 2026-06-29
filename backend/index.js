@@ -12,8 +12,10 @@ try {
 } catch {
   // dotenv not installed — that's fine in production
 }
+
 import express from 'express';
 import cors from 'cors';
+import { connectDB } from './config/db.js';
 
 // Route modules
 import productsRouter from './routes/products.js';
@@ -89,17 +91,26 @@ app.use('/api/chats', chatsRouter);
 app.use('/api/*', notFoundHandler);  // Catch unknown /api/* routes
 app.use(errorHandler);               // Global error handler
 
-// ─── Start Server ────────────────────────────────────────────────────
-// Bind to 0.0.0.0 so Render can route traffic to the container
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`
+// ─── Connect to MongoDB & Start Server ───────────────────────────────
+async function startServer() {
+  await connectDB();
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`
   ╔══════════════════════════════════════════╗
   ║   🎓 CampusMart API Server              ║
   ║   Running on port ${PORT}                   ║
   ║   Environment: ${process.env.NODE_ENV || 'development'}             ║
+  ║   Database: MongoDB                      ║
   ║   Health: /api/health                    ║
   ╚══════════════════════════════════════════╝
-  `);
+    `);
+  });
+}
+
+startServer().catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 });
 
 export default app;

@@ -11,7 +11,7 @@
  */
 
 import { Router } from 'express';
-import { db, collection, doc, getDocs, setDoc, deleteDoc, getDoc } from '../config/firebase.js';
+import { getDB } from '../config/db.js';
 import { ApiError } from '../middleware/errorHandler.js';
 
 const router = Router();
@@ -23,12 +23,12 @@ const router = Router();
 router.get('/', async (req, res, next) => {
   try {
     const { category, search } = req.query;
+    const db = getDB();
 
-    const querySnapshot = await getDocs(collection(db, 'products'));
-    let products = [];
-    querySnapshot.forEach((docSnapshot) => {
-      products.push({ id: docSnapshot.id, ...docSnapshot.data() });
-    });
+    let products = await db.collection('products').find().toArray();
+
+    // Map _id to id for frontend compatibility
+    products = products.map(({ _id, ...rest }) => ({ id: _id, ...rest }));
 
     // Apply category filter
     if (category && category.trim() !== '') {
@@ -60,14 +60,16 @@ router.get('/', async (req, res, next) => {
 router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const docRef = doc(db, 'products', id);
-    const docSnap = await getDoc(docRef);
+    const db = getDB();
 
-    if (!docSnap.exists()) {
+    const product = await db.collection('products').findOne({ _id: id });
+
+    if (!product) {
       throw new ApiError(404, `Product not found: ${id}`);
     }
 
-    res.json({ success: true, data: { id: docSnap.id, ...docSnap.data() } });
+    const { _id, ...rest } = product;
+    res.json({ success: true, data: { id: _id, ...rest } });
   } catch (error) {
     next(error);
   }
@@ -80,12 +82,21 @@ router.get('/:id', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const product = req.body;
+    const db = getDB();
 
     if (!product.id || !product.title || !product.price || !product.category) {
       throw new ApiError(400, 'Missing required fields: id, title, price, category');
     }
 
-    await setDoc(doc(db, 'products', product.id), product);
+    // Use product.id as _id for consistent document IDs
+    const doc = { _id: product.id, ...product };
+    delete doc.id;
+
+    await db.collection('products').updateOne(
+      { _id: doc._id },
+      { $set: doc },
+      { upsert: true }
+    );
 
     res.status(201).json({ success: true, data: product, message: 'Product created successfully' });
   } catch (error) {
@@ -101,19 +112,23 @@ router.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const updates = req.body;
+    const db = getDB();
 
     // Verify the product exists
-    const docRef = doc(db, 'products', id);
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) {
+    const existing = await db.collection('products').findOne({ _id: id });
+    if (!existing) {
       throw new ApiError(404, `Product not found: ${id}`);
     }
 
     // Merge updates
-    const updatedProduct = { ...docSnap.data(), ...updates, id };
-    await setDoc(docRef, updatedProduct);
+    const updatedProduct = { ...existing, ...updates, _id: id };
+    await db.collection('products').updateOne(
+      { _id: id },
+      { $set: updatedProduct }
+    );
 
-    res.json({ success: true, data: updatedProduct, message: 'Product updated successfully' });
+    const { _id, ...rest } = updatedProduct;
+    res.json({ success: true, data: { id: _id, ...rest }, message: 'Product updated successfully' });
   } catch (error) {
     next(error);
   }
@@ -121,20 +136,20 @@ router.put('/:id', async (req, res, next) => {
 
 /**
  * DELETE /api/products/:id
- * Removes a product listing from Firestore.
+ * Removes a product listing from the database.
  */
 router.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+    const db = getDB();
 
     // Verify the product exists
-    const docRef = doc(db, 'products', id);
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) {
+    const existing = await db.collection('products').findOne({ _id: id });
+    if (!existing) {
       throw new ApiError(404, `Product not found: ${id}`);
     }
 
-    await deleteDoc(docRef);
+    await db.collection('products').deleteOne({ _id: id });
 
     res.json({ success: true, message: `Product ${id} deleted successfully` });
   } catch (error) {

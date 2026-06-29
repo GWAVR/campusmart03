@@ -9,7 +9,7 @@
  */
 
 import { Router } from 'express';
-import { db, doc, setDoc, getDoc } from '../config/firebase.js';
+import { getDB } from '../config/db.js';
 import { ApiError } from '../middleware/errorHandler.js';
 
 const router = Router();
@@ -21,17 +21,16 @@ const router = Router();
 router.get('/:email/saved', async (req, res, next) => {
   try {
     const { email } = req.params;
+    const db = getDB();
 
     if (!email) {
       throw new ApiError(400, 'Email parameter is required');
     }
 
-    const docRef = doc(db, 'users', email);
-    const docSnap = await getDoc(docRef);
+    const user = await db.collection('users').findOne({ _id: email });
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      res.json({ success: true, data: data.savedProductIds || [] });
+    if (user) {
+      res.json({ success: true, data: user.savedProductIds || [] });
     } else {
       // User document doesn't exist yet — return empty
       res.json({ success: true, data: [] });
@@ -50,6 +49,7 @@ router.put('/:email/saved', async (req, res, next) => {
   try {
     const { email } = req.params;
     const { savedProductIds } = req.body;
+    const db = getDB();
 
     if (!email) {
       throw new ApiError(400, 'Email parameter is required');
@@ -59,8 +59,11 @@ router.put('/:email/saved', async (req, res, next) => {
       throw new ApiError(400, 'savedProductIds must be an array of strings');
     }
 
-    const docRef = doc(db, 'users', email);
-    await setDoc(docRef, { savedProductIds }, { merge: true });
+    await db.collection('users').updateOne(
+      { _id: email },
+      { $set: { savedProductIds } },
+      { upsert: true }
+    );
 
     res.json({ success: true, data: savedProductIds, message: 'Saved items updated' });
   } catch (error) {

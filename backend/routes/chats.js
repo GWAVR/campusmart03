@@ -8,7 +8,7 @@
  */
 
 import { Router } from 'express';
-import { db, doc, setDoc, getDoc } from '../config/firebase.js';
+import { getDB } from '../config/db.js';
 import { ApiError } from '../middleware/errorHandler.js';
 
 const router = Router();
@@ -20,13 +20,12 @@ const router = Router();
 router.get('/:productId', async (req, res, next) => {
   try {
     const { productId } = req.params;
+    const db = getDB();
 
-    const docRef = doc(db, 'chats', productId);
-    const docSnap = await getDoc(docRef);
+    const chat = await db.collection('chats').findOne({ _id: productId });
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      res.json({ success: true, data: data.messages || [] });
+    if (chat) {
+      res.json({ success: true, data: chat.messages || [] });
     } else {
       // No chat thread exists yet for this product
       res.json({ success: true, data: [] });
@@ -50,8 +49,12 @@ router.post('/:productId', async (req, res, next) => {
       throw new ApiError(400, 'messages must be an array of chat message objects');
     }
 
-    const docRef = doc(db, 'chats', productId);
-    await setDoc(docRef, { messages });
+    const db = getDB();
+    await db.collection('chats').updateOne(
+      { _id: productId },
+      { $set: { messages } },
+      { upsert: true }
+    );
 
     res.json({
       success: true,
